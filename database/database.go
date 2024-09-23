@@ -64,10 +64,6 @@ func DropAllTables(dbParam *gorm.DB) {
 		return
 	}
 
-	dbParam.Migrator().DropTable(&structs.Room{})
-	dbParam.Migrator().DropTable(&structs.Floor{})
-	dbParam.Migrator().DropTable(&structs.Guest{})
-	dbParam.Migrator().DropTable(&structs.RoomType{})
 	dbParam.Migrator().DropTable(&structs.User{})
 	dbParam.Migrator().DropTable(&structs.Role{})
 }

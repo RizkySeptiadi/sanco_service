@@ -3,6 +3,8 @@ package routers
 import (
 	"sanco_microservices/controllers"
 	"sanco_microservices/middleware"
+	"sanco_microservices/repository"
+	"sanco_microservices/structs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,22 +16,22 @@ var users = map[string]string{
 
 func StartServer() *gin.Engine {
 	router := gin.Default()
-	// RoomController := controllers.NewRoomController()
 
-	// roomTypeController := controllers.NewRoomTypeController()
-	// FloorController := controllers.NewFloorController()
-	GuestController := controllers.NewGuestController()
-	SuppliersController := controllers.NewSuppliersController()
+	// Initialize the general repository for Suppliers
+	supplierRepo := repository.NewGeneralRepository[structs.Sanco_Suppliers]("Supplier")
+	suppliersController := controllers.NewGeneralController(supplierRepo)
 
 	// Public routes
 	router.POST("/login", middleware.LoginHandler)
-	router.POST("/book", GuestController.Book)
 
-	router.POST("/api/master/supplier/store", SuppliersController.Create)
-	router.GET("/api/master/supplier/detail/:id", SuppliersController.GetByID)
-	router.PUT("/api/master/supplier/update/:id", SuppliersController.Update)
-	router.DELETE("/api/master/supplier/delete/:id", SuppliersController.Delete)
-	router.GET("/api/master/supplier/show", SuppliersController.Get)
+	// Supplier routes
+	router.POST("/api/master/supplier/store", suppliersController.Create)
+	router.GET("/api/master/supplier/detail/:id", suppliersController.GetByID)
+	router.PUT("/api/master/supplier/update/:id", suppliersController.Update)
+	router.DELETE("/api/master/supplier/delete/:id", suppliersController.Delete)
+	router.GET("/api/master/supplier/show", suppliersController.Get)
+	router.GET("/api/master/supplier/tables", suppliersController.GetTables)
+
 	// Protected routes
 	protected := router.Group("/protected")
 	protected.Use(middleware.AuthMiddleware())
