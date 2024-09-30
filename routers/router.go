@@ -28,6 +28,7 @@ func StartServer() *gin.Engine {
 	router.POST("/api/master/supplier/store", suppliersController.Create)
 	router.GET("/api/master/supplier/detail/:id", suppliersController.GetByID)
 	router.PUT("/api/master/supplier/update/:id", suppliersController.Update)
+	router.PUT("/api/master/supplier/update/state/:id", suppliersController.UpdateState)
 	router.DELETE("/api/master/supplier/delete/:id", suppliersController.Delete)
 	router.GET("/api/master/supplier/show", suppliersController.Get)
 	router.GET("/api/master/supplier/tables", suppliersController.GetTables)

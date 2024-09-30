@@ -3,6 +3,7 @@ package repository
 import (
 	"sanco_microservices/database"
 	"sanco_microservices/structs"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -74,8 +75,30 @@ func (repo *GeneralRepository[T]) DeleteData(id int64) (structs.Response[T], err
 	if err := repo.db.First(&data, id).Error; err != nil {
 		return structs.NewResponse(404, repo.module+" not found", *new(T)), err
 	}
-	if err := repo.db.Unscoped().Delete(&data, id).Error; err != nil {
-		return structs.NewResponse(500, "Failed to delete "+repo.module, *new(T)), err
+
+	// Update the deleted_at column with the current datetime
+	if err := repo.db.Model(&data).Update("deleted_at", time.Now()).Error; err != nil {
+		return structs.NewResponse(500, "Failed to soft delete "+repo.module, *new(T)), err
 	}
-	return structs.NewResponse(200, repo.module+" deleted successfully", data), nil
+
+	return structs.NewResponse(200, repo.module+" soft deleted successfully", data), nil
+}
+
+func (repo *GeneralRepository[T]) UpdateState(id int64) (structs.Response[T], error) {
+	var data T
+	if err := repo.db.First(&data, id).Error; err != nil {
+		return structs.NewResponse(404, repo.module+" not found", *new(T)), err
+	}
+	var currentStatus int
+	if err := repo.db.Model(&data).Select("status").Where("id = ?", id).Scan(&currentStatus).Error; err != nil {
+		return structs.NewResponse(500, "Failed to retrieve current status", *new(T)), err
+	}
+	newStatus := 0
+	if currentStatus != 1 {
+		newStatus = 1
+	}
+	if err := repo.db.Model(&data).Update("status", newStatus).Error; err != nil {
+		return structs.NewResponse(500, "Failed to update status", *new(T)), err
+	}
+	return structs.NewResponse(200, repo.module+" status updated successfully", data), nil
 }

@@ -120,12 +120,23 @@ func (ctrl *GeneralController[T]) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": "Invalid ID", "error": err.Error()})
 		return
 	}
-
 	response, err := ctrl.repo.DeleteData(id)
 	if err != nil {
 		c.JSON(response.Code, gin.H{"code": response.Code, "message": response.Message, "error": err.Error()})
 		return
 	}
-
+	c.JSON(response.Code, response)
+}
+func (ctrl *GeneralController[T]) UpdateState(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": "Invalid ID", "error": err.Error()})
+		return
+	}
+	response, err := ctrl.repo.UpdateState(id)
+	if err != nil {
+		c.JSON(response.Code, gin.H{"code": response.Code, "message": response.Message, "error": err.Error()})
+		return
+	}
 	c.JSON(response.Code, response)
 }
