@@ -57,6 +57,6 @@ func main() {
 	middleware.SetDatabase(db)
 
 	// Start the server
-	PORT := ":8000"
+	PORT := ":3000"
 	routers.StartServer().Run(PORT)
 }

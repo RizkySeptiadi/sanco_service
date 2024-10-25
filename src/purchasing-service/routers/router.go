@@ -19,17 +19,25 @@ func StartServer() *gin.Engine {
 
 	// Initialize the general repository for Suppliers
 	supplierRepo := repository.NewGeneralRepository[structs.Sanco_Suppliers]("Supplier")
+	purchase_invoices_repo := repository.NewGeneralPurchaseInvoiceRepository[structs.Sanco_Purchase_Invoices]("PurchaseInvoice")
+	purchase_invoices_detail_repo := repository.NewGeneralPurchaseInvoiceRepository[structs.Sanco_Purchase_Invoice_details]("PurchaseInvoice")
+
 	suppliersController := controllers.NewGeneralController(supplierRepo)
+
+	purchase_invoice_controller := controllers.NewPurchaseInvoiceController(purchase_invoices_repo)
+
+	purchase_invoice_detail_controller := controllers.NewPurchaseInvoiceController(purchase_invoices_detail_repo)
 
 	// Public routes
 	router.POST("/api/login", middleware.LoginHandler)
-	router.POST("/api/master/supplier/store", suppliersController.Create)
-	router.GET("/api/master/supplier/detail/:id", suppliersController.GetByID)
-	router.PUT("/api/master/supplier/update/:id", suppliersController.Update)
-	router.PUT("/api/master/supplier/update/state/:id", suppliersController.UpdateState)
-	router.DELETE("/api/master/supplier/delete/:id", suppliersController.Delete)
-	router.GET("/api/master/supplier/show", suppliersController.Get)
-	router.GET("/api/master/supplier/tables", suppliersController.GetTables)
+	router.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
+	router.GET("/api/master/purchase_invoice/show", suppliersController.Get)
+	router.GET("/api/master/purchase_invoice/get_parent/:id", purchase_invoice_controller.GetByID)
+	router.GET("/api/master/purchase_invoice/get_all_detail/:id", purchase_invoice_detail_controller.GetAllDataDetailByID)
+	router.GET("/api/master/purchase_invoice/get_detail/:id", purchase_invoice_detail_controller.GetDataDetailByID)
+	router.POST("/api/master/purchase_invoice/store", purchase_invoice_controller.Create)
+	router.PUT("/api/master/purchase_invoice/update/:id", purchase_invoice_controller.Update)
+
 	// Supplier routes
 
 	// Protected routes
@@ -44,6 +52,12 @@ func StartServer() *gin.Engine {
 		protected.DELETE("/api/master/supplier/delete/:id", suppliersController.Delete)
 		protected.GET("/api/master/supplier/show", suppliersController.Get)
 		protected.GET("/api/master/supplier/tables", suppliersController.GetTables)
+
+		// protected.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
+		// protected.GET("/api/master/purchase_invoice/show", purchase_invoice_controller.Get)
+		// protected.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
+
+		// protected.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
 
 		// protected.GET("/guest/:id", RoomController.GetByID)
 		// protected.PUT("/checkIn/:id", GuestController.CheckIn)

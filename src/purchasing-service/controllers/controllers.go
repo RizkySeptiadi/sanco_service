@@ -55,7 +55,7 @@ func (ctrl *GeneralController[T]) GetTables(c *gin.Context) {
 	status := c.DefaultQuery("status", "")
 
 	// Call the repository to fetch paginated data
-	response, err := ctrl.repo.PaginateData(start, length, search, orderBy, orderDir, status)
+	response, err := ctrl.repo.PaginateDataSupp(start, length, search, orderBy, orderDir, status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
