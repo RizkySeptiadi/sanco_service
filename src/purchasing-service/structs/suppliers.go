@@ -12,9 +12,10 @@ type Date struct {
 
 type Sanco_Purchase_Invoices struct {
 	gorm.Model
-	ID          int64     `json:"ID"`
-	Supplier_id int64     `gorm:"unique" binding:"required" json:"Supplier_id"`
-	Date        time.Time `json:"Date" gorm:"type:date"` // Date only
+	ID           int64     `json:"ID"`
+	Supplier_id  int64     `gorm:"unique" binding:"required" json:"Supplier_id"`
+	Date         time.Time `json:"Date" gorm:"type:date"` // Date only
+	NumberManual string    `json:"NumberManual"`
 
 	Purchase_invoice_number string  `json:"Purchase_invoice_number"`
 	Quantity                float32 `binding:"required" json:"Quantity"`
@@ -50,6 +51,8 @@ type PurchasingIndex struct {
 	gorm.Model
 	SupplierID            int64   // ID from Sanco_Suppliers
 	SupplierCode          string  // Code from Sanco_Suppliers
+	Date                  string  // Code from Sanco_Suppliers
+	NumberManual          string  // Code from Sanco_Suppliers
 	SupplierName          string  // Name from Sanco_Suppliers
 	PurchaseInvoiceID     int64   // ID from Sanco_Purchase_Invoices
 	PurchaseInvoiceNumber string  // Purchase invoice number from Sanco_Purchase_Invoices
