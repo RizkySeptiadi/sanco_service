@@ -21,37 +21,43 @@ func StartServer() *gin.Engine {
 	supplierRepo := repository.NewGeneralRepository[structs.Sanco_Suppliers]("Supplier")
 	purchase_invoices_repo := repository.NewGeneralPurchaseInvoiceRepository[structs.Sanco_Purchase_Invoices]("PurchaseInvoice")
 	purchase_invoices_detail_repo := repository.NewGeneralPurchaseInvoiceRepository[structs.Sanco_Purchase_Invoice_details]("PurchaseInvoice")
+	warehouse_repo := repository.NewGeneralWarehouseRepository[structs.Incoming_Order]("Incoming_order")
 
 	suppliersController := controllers.NewGeneralController(supplierRepo)
 
 	purchase_invoice_controller := controllers.NewPurchaseInvoiceController(purchase_invoices_repo)
+	warehouse_controller := controllers.NewWarehouseController(warehouse_repo)
 
 	purchase_invoice_detail_controller := controllers.NewPurchaseInvoiceController(purchase_invoices_detail_repo)
 
 	// Public routes
 	router.POST("/api/login", middleware.LoginHandler)
-	router.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
-	router.GET("/api/master/purchase_invoice/show", suppliersController.Get)
-	router.GET("/api/master/purchase_invoice/get_parent/:id", purchase_invoice_controller.GetByID)
-	router.GET("/api/master/purchase_invoice/get_all_detail/:id", purchase_invoice_detail_controller.GetAllDataDetailByID)
-	router.GET("/api/master/purchase_invoice/get_detail/:id", purchase_invoice_detail_controller.GetDataDetailByID)
-	router.POST("/api/master/purchase_invoice/store", purchase_invoice_controller.Create)
-	router.PUT("/api/master/purchase_invoice/update/:id", purchase_invoice_controller.Update)
 
 	// Supplier routes
 
 	// Protected routes
-	protected := router.Group("/protected")
+	protected := router.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
 	{
+		protected.POST("/master/supplier/store", suppliersController.Create)
+		protected.GET("/master/supplier/detail/:id", suppliersController.GetByID)
+		protected.PUT("/master/supplier/update/:id", suppliersController.Update)
+		protected.PUT("/master/supplier/update/state/:id", suppliersController.UpdateState)
+		protected.DELETE("/master/supplier/delete/:id", suppliersController.Delete)
+		protected.GET("/master/supplier/show", suppliersController.Get)
+		protected.GET("/master/supplier/tables", suppliersController.GetTables)
+		protected.GET("/purchase_invoice/tables", purchase_invoice_controller.GetTables)
+		protected.GET("/purchase_invoice/show", suppliersController.Get)
+		protected.GET("/purchase_invoice/get_parent/:id", purchase_invoice_controller.GetByID)
+		protected.GET("/purchase_invoice/get_all_detail/:id", purchase_invoice_detail_controller.GetAllDataDetailByID)
+		protected.GET("/purchase_invoice/get_detail/:id", purchase_invoice_detail_controller.GetDataDetailByID)
 
-		protected.POST("/api/master/supplier/store", suppliersController.Create)
-		protected.GET("/api/master/supplier/detail/:id", suppliersController.GetByID)
-		protected.PUT("/api/master/supplier/update/:id", suppliersController.Update)
-		protected.PUT("/api/master/supplier/update/state/:id", suppliersController.UpdateState)
-		protected.DELETE("/api/master/supplier/delete/:id", suppliersController.Delete)
-		protected.GET("/api/master/supplier/show", suppliersController.Get)
-		protected.GET("/api/master/supplier/tables", suppliersController.GetTables)
+		protected.POST("/purchase_invoice/store", purchase_invoice_controller.Create)
+		protected.PUT("/purchase_invoice/update/:id", purchase_invoice_controller.Update)
+		protected.PUT("/purchase_invoice/update/state/:id", purchase_invoice_controller.UpdateState)
+
+		protected.PUT("/warehouse_request/create/:id", warehouse_controller.Create)
+		protected.DELETE("/purchase_invoice/delete/:id", purchase_invoice_controller.Delete)
 
 		// protected.GET("/api/master/purchase_invoice/tables", purchase_invoice_controller.GetTables)
 		// protected.GET("/api/master/purchase_invoice/show", purchase_invoice_controller.Get)

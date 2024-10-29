@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"purchasing_service/database"
 	"purchasing_service/structs"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -26,6 +27,7 @@ func (repo *PurchaseInvoiceRepository[T]) PaginateDataSupp(start int, length int
 	var data []structs.PurchasingIndex
 	var totalRecords int64
 	var filteredRecords int64
+	var value int32
 
 	// Base query
 	query := repo.db.Model(&structs.Sanco_Purchase_Invoices{}).
@@ -48,6 +50,15 @@ func (repo *PurchaseInvoiceRepository[T]) PaginateDataSupp(start int, length int
 		query = query.Where("sanco_purchase_invoice_numberings.number LIKE ?", "%"+search+"%").
 			Or("sanco_suppliers.name LIKE ?", "%"+search+"%").
 			Or("sanco_purchase_invoices.purchase_invoice_number LIKE ?", "%"+search+"%")
+	}
+	if status != "All" {
+		if status == "Active" {
+			value = 1
+		} else {
+			value = 0
+
+		}
+		query = query.Where("status = ?", value)
 	}
 
 	// Get filtered records count
@@ -157,11 +168,24 @@ func (repo *PurchaseInvoiceRepository[T]) GetDetailByID(tx *gorm.DB, id int64) (
 	}
 	return &detail, nil
 }
-func (repo *PurchaseInvoiceRepository[T]) GetAllDataDetailByID(Purchase_invoice_id int64) (structs.Response[[]T], error) {
-	var data []T
-	// Retrieve the record by ID without checking for soft deletes
-	if err := repo.db.Where("purchase_invoice_id = ?", Purchase_invoice_id).Find(&data).Error; err != nil {
-		return structs.NewResponse(500, "Failed to retrieve "+repo.module, []T{}), err
+func (repo *PurchaseInvoiceRepository[T]) GetAllDataDetailByID(Purchase_invoice_id int64) (structs.Response[[]structs.SancoPurchaseInvoiceDetailWithSupplier], error) {
+	var data []structs.SancoPurchaseInvoiceDetailWithSupplier
+	// Query to join and retrieve SupplierName
+	query := `
+		SELECT 
+			sanco_purchase_invoice_details.*, 
+			sanco_suppliers.name as SupplierName
+		FROM 
+			sanco_purchase_invoice_details 
+		LEFT JOIN 
+			sanco_suppliers ON sanco_purchase_invoice_details.supplier_id = sanco_suppliers.id
+		WHERE 
+			sanco_purchase_invoice_details.purchase_invoice_id = ?
+	`
+
+	// Execute the query
+	if err := repo.db.Raw(query, Purchase_invoice_id).Scan(&data).Error; err != nil {
+		return structs.NewResponse(500, "Failed to retrieve "+repo.module, []structs.SancoPurchaseInvoiceDetailWithSupplier{}), err
 	}
 	return structs.NewResponse(200, repo.module+" retrieved successfully", data), nil
 }
@@ -193,4 +217,55 @@ func (repo *PurchaseInvoiceRepository[T]) GenerateNewNumber() (string, error) {
 	}
 
 	return newNumber, nil
+}
+func (repo *PurchaseInvoiceRepository[T]) UpdateState(id int64) (structs.Response[T], error) {
+	var data T
+	if err := repo.db.First(&data, id).Error; err != nil {
+		return structs.NewResponse(404, repo.module+" not found", *new(T)), err
+	}
+	var currentStatus int
+	if err := repo.db.Model(&data).Select("post").Where("id = ?", id).Scan(&currentStatus).Error; err != nil {
+		return structs.NewResponse(500, "Failed to retrieve current status", *new(T)), err
+	}
+	newStatus := 0
+	if currentStatus != 1 {
+		newStatus = 1
+	}
+	if err := repo.db.Model(&data).Update("post", newStatus).Error; err != nil {
+		return structs.NewResponse(500, "Failed to update status", *new(T)), err
+	}
+	return structs.NewResponse(200, repo.module+" status updated successfully", data), nil
+}
+func (repo *PurchaseInvoiceRepository[T]) DeleteData(id int64) (structs.Response[T], error) {
+	var data T
+	invoicesTable := "sanco_purchase_invoices"
+	invoiceDetailsTable := "sanco_purchase_invoice_details"
+
+	// Check if the main record exists in the invoices table
+	if err := repo.db.First(&data, id).Error; err != nil {
+		return structs.NewResponse(404, repo.module+" not found", *new(T)), err
+	}
+
+	// Check the current status to see if it's already posted
+	var currentStatus int
+	if err := repo.db.Model(&data).Select("post").Where("id = ?", id).Scan(&currentStatus).Error; err != nil {
+		return structs.NewResponse(500, "Failed to retrieve current status", *new(T)), err
+	}
+	if currentStatus == 1 {
+		return structs.NewResponse(400, "Deletion failed: data already posted", *new(T)), nil
+	}
+
+	// Soft delete related records in the invoice details table
+	if err := repo.db.Table(invoiceDetailsTable).Where("purchase_invoice_id = ?", id).
+		Update("deleted_at", time.Now()).Error; err != nil {
+		return structs.NewResponse(500, "Failed to soft delete related records in "+invoiceDetailsTable, *new(T)), err
+	}
+
+	// Soft delete the main record in the invoices table
+	if err := repo.db.Table(invoicesTable).Where("id = ?", id).
+		Update("deleted_at", time.Now()).Error; err != nil {
+		return structs.NewResponse(500, "Failed to soft delete "+repo.module, *new(T)), err
+	}
+
+	return structs.NewResponse(200, repo.module+" soft deleted successfully", data), nil
 }

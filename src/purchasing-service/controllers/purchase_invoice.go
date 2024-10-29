@@ -242,3 +242,30 @@ func (ctrl *PurchaseInvoiceController[T]) Update(c *gin.Context) {
 	// On success, return the successful response
 	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "Purchase invoice updated successfully", "data": requestData})
 }
+
+func (ctrl *PurchaseInvoiceController[T]) UpdateState(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": "Invalid ID", "error": err.Error()})
+		return
+	}
+	response, err := ctrl.repo.UpdateState(id)
+	if err != nil {
+		c.JSON(response.Code, gin.H{"code": response.Code, "message": response.Message, "error": err.Error()})
+		return
+	}
+	c.JSON(response.Code, response)
+}
+func (ctrl *PurchaseInvoiceController[T]) Delete(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": "Invalid ID", "error": err.Error()})
+		return
+	}
+	response, err := ctrl.repo.DeleteData(id)
+	if err != nil {
+		c.JSON(response.Code, gin.H{"code": response.Code, "message": response.Message, "error": err.Error()})
+		return
+	}
+	c.JSON(response.Code, response)
+}

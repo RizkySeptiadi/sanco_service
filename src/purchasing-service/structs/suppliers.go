@@ -28,11 +28,16 @@ type Sanco_Purchase_Invoices struct {
 	Post                    int8    `json:"Post"`
 	Account_payable_cart    int8    `json:"Account_payable_cart"`
 }
+type SancoPurchaseInvoiceDetailWithSupplier struct {
+	Sanco_Purchase_Invoice_details
+	SupplierName string `json:"SupplierName"`
+}
 
 type Sanco_Purchase_Invoice_details struct {
 	gorm.Model
-	ID                  int64   `json:"ID"`
-	Supplier_id         int64   `gorm:"unique" binding:"required" json:"Supplier_id"`
+	ID          int64 `json:"ID"`
+	Supplier_id int64 `gorm:"not null" binding:"required" json:"Supplier_id"`
+
 	Purchase_invoice_id int64   `gorm:"not null" binding:"required" json:"Purchase_invoice_id"`
 	Pn                  string  `json:"Pn"`
 	Pname               string  `json:"Pname"`
